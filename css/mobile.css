@@ -1,0 +1,96 @@
+/* Mobile Styles for Wigellkoncernen Biluthyrning (Max Width: 768px) */
+
+@media (max-width: 768px) {
+    /* 1. Header & Navigation Reflow */
+    .header-content {
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+        padding: 1.5rem 0 !important;
+        text-align: center !important;
+    }
+    
+    .logo-container {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .logo-container img {
+        height: 60px !important;
+    }
+
+    nav {
+        width: 100%;
+    }
+
+    .nav-list {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 1rem !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .nav-link {
+        font-size: 0.85rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    .user-profile-nav {
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* 2. Responsive Grids */
+    .grid-3, .grid-2, .responsive-two-column-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+
+    .responsive-four-column-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.8rem !important;
+    }
+
+    /* 3. Hero Adjustments */
+    .hero {
+        padding: 3rem 1rem !important;
+        text-align: center !important;
+    }
+
+    .hero h1 {
+        font-size: 2rem !important;
+    }
+
+    .hero p {
+        font-size: 0.95rem !important;
+    }
+
+    /* 4. Table Containers for scrollability */
+    .table-container {
+        width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table {
+        min-width: 600px; /* Force minimum width to guarantee table structure doesn't squish */
+    }
+
+    /* 5. Modals and general inputs */
+    .modal-container {
+        width: 95% !important;
+        padding: 1.5rem !important;
+        margin: 10px !important;
+    }
+    
+    /* Adjust text size on cards */
+    .card-content h3 {
+        font-size: 1.3rem !important;
+    }
+    
+    .card-content {
+        padding: 1.5rem !important;
+    }
+}
