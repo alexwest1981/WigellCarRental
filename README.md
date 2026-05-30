@@ -86,6 +86,13 @@ Detta är ett av systemets mest omfattande flöden och kan startas antingen av k
    * **Faktura**: Skapar en komplett faktura med fakturanummer, kunduppgifter, momsredovisning (25%) och en fullt fungerande utskriftsknapp kopplad till webbläsarens utskriftsfunktion (`window.print()`).
 4. **API-integration**: Vid avslutat köp skickas en `PUT`-förfrågan till backend som stänger bokningen och sätter dess status till inaktiv.
 
+### 💰 Ekonomi- & Omsättningsrapport (Alternativ C)
+Administratörer har tillgång till en interaktiv **Ekonomi**-flik i kontrollpanelen:
+1. **Samlad inkomst live**: Beräknar och visar total omsättning, grundhyresintäkter och intäkter från förseningsavgifter i realtid.
+2. **Lokal JSON-loggning**: Vid varje avslutad återlämning sparas betalningsmetod, faktiska belopp och returdatum i webbläsarens lokala minne (`localStorage`) under nyckeln `wigell_returns`.
+3. **Kombinerad sammanställning**: När ekonomifliken öppnas hämtar systemet all boknings- och fordonsdata live från backend-API:et och slår samman den med den lokala JSON-loggen för att visa en komplett transaktionshistorik.
+4. **Exportera data**: Administratören kan ladda ner hela transaktionsloggen över alla inkomster som en strukturerad `.json`-fil för redovisning och revision.
+
 ---
 
 ## 📂 Projektstruktur

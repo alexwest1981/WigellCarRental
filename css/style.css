@@ -316,6 +316,12 @@ body {
     background: var(--color-brand-glow);
 }
 
+.btn-outline.active {
+    background: var(--color-brand-primary);
+    color: #000000;
+    font-weight: 700;
+}
+
 .btn-danger {
     background: var(--color-danger);
     color: #000000;

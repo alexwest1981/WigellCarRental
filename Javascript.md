@@ -106,11 +106,14 @@ graph TD
     Admin[Admin Panel] --> Cars[Hantera Bilar]
     Admin --> Bookings[Visa Bokningar]
     Admin --> Users[Hantera Användare]
+    Admin --> Revenue[Inkomst & Ekonomi]
     Admin --> Styleguide[Designsystem]
 ```
 
 ### Gemensam funktionalitet
-* `loadAdminData(type)`: Generiskt anrop till `/cars`, `/bookings` eller `/users` beroende på vald flik, cachelagrar datan och anropar `renderAdminTable()`.
+* `loadAdminData(type)`: Generiskt anrop till `/cars`, `/bookings` eller `/users` beroende på vald flik, cachelagrar datan, markerar vald knapp som aktiv och anropar `renderAdminTable()`.
+* `showAdminRevenue()`: Hämtar live-data från API:et för bokningar, bilar och kunder. Slår samman detta med lokala kvitton sparade i `localStorage` (`wigell_returns`) för att få korrekta betalningsmetoder, faktiska priser och returdatum. Presenterar sammanställningar över omsättning, grundhyror och förseningsavgifter samt renderar en komplett transaktionshistorik.
+* `exportRevenueJSON()`: Genererar en nedladdningsbar JSON-fil med den fullständiga transaktionsloggen över alla slutförda uthyrningar för bokföring och revision.
 * `setAdminSort(field)` & `sortData(data)`: Sorterar kolumner i admin-tabellerna stigande eller fallande baserat på vilken kolumnrubrik användaren klickar (eller tabbar och trycker Enter) på.
 * `deleteItem(type, id)`: Visar en bekräftelse-ruta och skickar därefter ett `DELETE`-anrop för vald resurs till API:et.
 

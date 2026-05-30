@@ -45,6 +45,8 @@ Sök efter det exakta funktionsnamnet (inklusive parenteser) för att snabbt nav
 - app.renderAdminTable()                  - Renderar vald tabell i admin-panelen
 - app.setAdminSort(field)                 - Sätter sorteringsfält för admin-tabeller
 - app.sortData(data)                      - Sorterar administrativ data
+- app.showAdminRevenue()                  - Beräknar och visar samlad inkomst och transaktioner
+- app.exportRevenueJSON()                 - Exporterar intäktstransaktionerna som JSON-fil
 
 # ADMIN TABELLER & CRUD
 - app.renderCarsTable()                   - Renderar tabellen för bilar
@@ -769,11 +771,12 @@ background-color: var(--color-bg-base);</div>
                     <h1>Admin Kontrollpanel</h1>
                 </div>
                 
-                <div class="responsive-four-column-grid" style="margin-bottom:2rem">
-                    <button class="btn btn-outline" onclick="app.loadAdminData('cars')">📦 BILAR</button>
-                    <button class="btn btn-outline" onclick="app.loadAdminData('bookings')">📅 BOKNINGAR</button>
-                    <button class="btn btn-outline" onclick="app.loadAdminData('users')">👥 ANVÄNDARE</button>
-                    <button class="btn btn-outline" style="border-color: #d4af37" onclick="app.showStyleguide()">🎨 STYLEGUIDE</button>
+                <div class="admin-menu-buttons" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:1rem; margin-bottom:2rem;">
+                    <button class="btn btn-outline" id="admin-btn-cars" onclick="app.loadAdminData('cars')">📦 BILAR</button>
+                    <button class="btn btn-outline" id="admin-btn-bookings" onclick="app.loadAdminData('bookings')">📅 BOKNINGAR</button>
+                    <button class="btn btn-outline" id="admin-btn-users" onclick="app.loadAdminData('users')">👥 ANVÄNDARE</button>
+                    <button class="btn btn-outline" id="admin-btn-revenue" style="border-color: var(--color-brand-primary); color: var(--color-brand-primary);" onclick="app.showAdminRevenue()">💰 EKONOMI</button>
+                    <button class="btn btn-outline" style="border-color: #555" onclick="app.showStyleguide()">🎨 STYLEGUIDE</button>
                 </div>
                 
                 <div id="admin-table-area" class="table-container">
@@ -787,6 +790,11 @@ background-color: var(--color-bg-base);</div>
         const area = document.getElementById('admin-table-area');
         area.innerHTML = '<p style="text-align:center" class="text-muted">Hämtar data...</p>';
         
+        // Highlight active button
+        document.querySelectorAll('.admin-menu-buttons button').forEach(el => el.classList.remove('active'));
+        const activeBtn = document.getElementById(`admin-btn-${type}`);
+        if (activeBtn) activeBtn.classList.add('active');
+
         try {
             const data = await this.api(`/${type}`);
             this[type] = data || [];
@@ -1356,6 +1364,7 @@ background-color: var(--color-bg-base);</div>
     },
 
     renderReturnCash() {
+        if (this.currentReturnData) this.currentReturnData.paymentMethod = 'Kontant';
         const { booking, totalPrice } = this.currentReturnData;
         const container = document.getElementById('modal-container');
         container.innerHTML = `
@@ -1410,6 +1419,7 @@ background-color: var(--color-bg-base);</div>
     },
 
     renderReturnCard() {
+        if (this.currentReturnData) this.currentReturnData.paymentMethod = 'Kort';
         const { booking, totalPrice } = this.currentReturnData;
         const container = document.getElementById('modal-container');
         container.innerHTML = `
@@ -1453,6 +1463,7 @@ background-color: var(--color-bg-base);</div>
     },
 
     renderReturnInvoice() {
+        if (this.currentReturnData) this.currentReturnData.paymentMethod = 'Faktura';
         const { booking, car, customer, bookedDays, basePrice, lateDays, penalty, totalPrice } = this.currentReturnData;
         const container = document.getElementById('modal-container');
         container.style.maxWidth = '700px';
@@ -1564,6 +1575,31 @@ background-color: var(--color-bg-base);</div>
     async completeReturn(bookingId) {
         try {
             await this.api(`/bookings/return/${bookingId}`, 'PUT');
+            
+            // Spara returdata lokalt i localStorage för framtida inkomstrullning
+            if (this.currentReturnData && this.currentReturnData.booking.id == bookingId) {
+                try {
+                    const stored = localStorage.getItem('wigell_returns') || '[]';
+                    const list = JSON.parse(stored);
+                    const filtered = list.filter(item => item.bookingId != bookingId);
+                    
+                    const todayStr = new Date().toISOString().slice(0, 10);
+                    
+                    filtered.push({
+                        bookingId: bookingId,
+                        returnDate: todayStr,
+                        paymentMethod: this.currentReturnData.paymentMethod || 'Faktura',
+                        basePrice: this.currentReturnData.basePrice,
+                        penalty: this.currentReturnData.penalty,
+                        totalPrice: this.currentReturnData.totalPrice
+                    });
+                    
+                    localStorage.setItem('wigell_returns', JSON.stringify(filtered));
+                } catch (e) {
+                    console.error("Kunde inte spara returdata till localStorage:", e);
+                }
+            }
+
             alert("Bilen har lämnats tillbaka och bokningen har stängts!");
             this.closeModal();
             if (window.location.hash === '#admin') {
@@ -1574,6 +1610,197 @@ background-color: var(--color-bg-base);</div>
         } catch (err) {
             alert("Kunde inte registrera återlämningen: " + err.message);
         }
+    },
+
+    async showAdminRevenue() {
+        const area = document.getElementById('admin-table-area');
+        area.innerHTML = '<p style="text-align:center" class="text-muted">Beräknar inkomster...</p>';
+        this.currentAdminType = 'revenue';
+        
+        // Highlight aktiv knapp
+        document.querySelectorAll('.admin-menu-buttons button').forEach(el => el.classList.remove('active'));
+        const ecoBtn = document.getElementById('admin-btn-revenue');
+        if (ecoBtn) ecoBtn.classList.add('active');
+
+        try {
+            const bookings = await this.api('/bookings');
+            const cars = this.cars.length ? this.cars : await this.api('/cars');
+            let users = [];
+            try {
+                users = await this.api('/users');
+            } catch (e) {
+                console.warn("Kunde inte hämta användare för inkomstberäkning", e);
+            }
+
+            // Hämta lokalt sparade kvitton/returer
+            let localReturns = {};
+            try {
+                const stored = localStorage.getItem('wigell_returns');
+                if (stored) {
+                    const list = JSON.parse(stored);
+                    list.forEach(item => {
+                        localReturns[item.bookingId] = item;
+                    });
+                }
+            } catch (e) {
+                console.error("Kunde inte läsa från localStorage", e);
+            }
+
+            let totalBase = 0;
+            let totalPenalty = 0;
+            let totalRevenue = 0;
+            let transactions = [];
+
+            // Filtrera ut avslutade bokningar (dvs active === false)
+            const completedBookings = bookings.filter(b => !b.active);
+
+            completedBookings.forEach(booking => {
+                const car = cars.find(c => c.id == booking.carId);
+                const user = users.find(u => u.id == booking.userId);
+                const customerName = user ? `${user.firstName} ${user.lastName}` : `Kund (ID: ${booking.userId})`;
+                
+                const fromDate = new Date(booking.fromDate);
+                const toDate = new Date(booking.toDate);
+                const bookedDays = Math.max(1, Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24)));
+                
+                let basePrice = car ? (bookedDays * car.price) : 0;
+                let penalty = 0;
+                let paymentMethod = "Faktura"; // Standard fallback
+                let returnDate = booking.toDate; // Fallback till planerad retur
+
+                // Kolla om vi har sparat specifika detaljer i localStorage
+                const localData = localReturns[booking.id];
+                if (localData) {
+                    basePrice = localData.basePrice || basePrice;
+                    penalty = localData.penalty || 0;
+                    paymentMethod = localData.paymentMethod || paymentMethod;
+                    returnDate = localData.returnDate || returnDate;
+                }
+
+                const totalPrice = basePrice + penalty;
+
+                totalBase += basePrice;
+                totalPenalty += penalty;
+                totalRevenue += totalPrice;
+
+                transactions.push({
+                    bookingId: booking.id,
+                    carName: car ? `${car.name} ${car.model}` : `Okänd bil (ID: ${booking.carId})`,
+                    customerName,
+                    period: `${booking.fromDate} till ${booking.toDate}`,
+                    returnDate,
+                    paymentMethod,
+                    basePrice,
+                    penalty,
+                    totalPrice
+                });
+            });
+
+            // Sortera transaktionerna efter bookingId fallande (senaste överst)
+            transactions.sort((a, b) => b.bookingId - a.bookingId);
+
+            let transactionsHtml = '';
+            if (transactions.length === 0) {
+                transactionsHtml = `
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:2rem; color:var(--color-text-muted);">
+                            Inga slutförda uthyrningar finns registrerade än.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                transactions.forEach(t => {
+                    transactionsHtml += `
+                        <tr class="table-row-premium">
+                            <td>#${t.bookingId}</td>
+                            <td>${t.carName}</td>
+                            <td>${t.customerName}</td>
+                            <td><span style="font-size:0.75rem">${t.period}</span></td>
+                            <td>${t.returnDate}</td>
+                            <td><span class="badge" style="background:rgba(255,255,255,0.05); color:var(--color-text-main); font-weight:normal; padding: 2px 8px; border-radius: 4px;">${t.paymentMethod}</span></td>
+                            <td style="text-align:right;">${t.basePrice} kr</td>
+                            <td style="text-align:right; color:${t.penalty > 0 ? 'var(--color-brand-primary)' : 'var(--color-text-muted)'}">${t.penalty} kr</td>
+                            <td style="text-align:right; font-weight:bold; color:var(--color-brand-primary);">${t.totalPrice} kr</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            area.innerHTML = `
+                <div class="view-fade">
+                    <h2 class="h2-premium" style="margin-bottom:1.5rem">Inkomst & Omsättning</h2>
+                    
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:2rem;">
+                        <div class="card" style="padding:1.5rem; background:linear-gradient(135deg, rgba(212,175,55,0.1), rgba(0,0,0,0.2)); border:1px solid rgba(212,175,55,0.2); text-align:center;">
+                            <p style="margin:0 0 0.5rem 0; color:var(--color-brand-primary); font-size:0.85rem; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Total Omsättning</p>
+                            <h3 style="margin:0; font-size:2.2rem; font-weight:800; color:var(--color-brand-primary);">${totalRevenue} SEK</h3>
+                            <p style="margin:0.5rem 0 0 0; font-size:0.75rem; color:var(--color-text-muted)">Inkl. moms och eventuella straffavgifter</p>
+                        </div>
+                        <div class="card" style="padding:1.5rem; text-align:center;">
+                            <p style="margin:0 0 0.5rem 0; color:var(--color-text-muted); font-size:0.85rem; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Grundhyra</p>
+                            <h3 style="margin:0; font-size:1.8rem; font-weight:700; color:var(--color-text-main);">${totalBase} SEK</h3>
+                            <p style="margin:0.5rem 0 0 0; font-size:0.75rem; color:var(--color-text-muted)">Från ordinarie hyrestid</p>
+                        </div>
+                        <div class="card" style="padding:1.5rem; text-align:center;">
+                            <p style="margin:0 0 0.5rem 0; color:var(--color-text-muted); font-size:0.85rem; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Straffavgifter</p>
+                            <h3 style="margin:0; font-size:1.8rem; font-weight:700; color:${totalPenalty > 0 ? 'var(--color-brand-primary)' : 'var(--color-text-muted)'};">${totalPenalty} SEK</h3>
+                            <p style="margin:0.5rem 0 0 0; font-size:0.75rem; color:var(--color-text-muted)">Från försenade återlämningar (5%/dag)</p>
+                        </div>
+                        <div class="card" style="padding:1.5rem; text-align:center;">
+                            <p style="margin:0 0 0.5rem 0; color:var(--color-text-muted); font-size:0.85rem; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Antal Slutförda</p>
+                            <h3 style="margin:0; font-size:1.8rem; font-weight:700; color:var(--color-text-main);">${transactions.length} st</h3>
+                            <p style="margin:0.5rem 0 0 0; font-size:0.75rem; color:var(--color-text-muted)">Returnerade bokningar i systemet</p>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <h3 style="margin:0; color:var(--color-text-main);">Transaktionshistorik (JSON Live Data)</h3>
+                        <button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.75rem; width:auto;" onclick="app.exportRevenueJSON()">📥 Exportera JSON</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table-premium" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Bil</th>
+                                    <th>Kund</th>
+                                    <th>Period</th>
+                                    <th>Returdatum</th>
+                                    <th>Betalsätt</th>
+                                    <th style="text-align:right;">Grundhyra</th>
+                                    <th style="text-align:right;">Straffavgift</th>
+                                    <th style="text-align:right;">Totalpris</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${transactionsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // Spara transaktioner i objektet för export
+            this.revenueTransactions = transactions;
+
+        } catch (err) {
+            area.innerHTML = `<p style="text-align:center; color:var(--color-danger)">Fel vid beräkning: ${err.message}</p>`;
+        }
+    },
+
+    exportRevenueJSON() {
+        if (!this.revenueTransactions || this.revenueTransactions.length === 0) {
+            alert("Inga transaktioner att exportera.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.revenueTransactions, null, 4));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `wigell_rental_revenue_${new Date().toISOString().slice(0, 10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
     }
 };
 
