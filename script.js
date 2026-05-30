@@ -775,7 +775,7 @@ background-color: var(--color-bg-base);</div>
                     <button class="btn btn-outline" id="admin-btn-cars" onclick="app.loadAdminData('cars')">📦 BILAR</button>
                     <button class="btn btn-outline" id="admin-btn-bookings" onclick="app.loadAdminData('bookings')">📅 BOKNINGAR</button>
                     <button class="btn btn-outline" id="admin-btn-users" onclick="app.loadAdminData('users')">👥 ANVÄNDARE</button>
-                    <button class="btn btn-outline" id="admin-btn-revenue" style="border-color: var(--color-brand-primary); color: var(--color-brand-primary);" onclick="app.showAdminRevenue()">💰 EKONOMI</button>
+                    <button class="btn btn-outline" id="admin-btn-revenue" onclick="app.showAdminRevenue()">💰 EKONOMI</button>
                     <button class="btn btn-outline" style="border-color: #555" onclick="app.showStyleguide()">🎨 STYLEGUIDE</button>
                 </div>
                 
