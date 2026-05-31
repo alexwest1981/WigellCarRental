@@ -73,8 +73,10 @@ Om du vill läsa mer eller se exempel på komponenterna, spana in fliken **Desig
 ### 📱 Snabbt & responsivt SPA-flöde
 Inga jobbiga sidomladdningar! Frontend använder hash-baserad routing (`#bilar`, `#kontakt`, `#admin`, etc.) vilket ger en direkt respons och en app-liknande känsla. Gränssnittet anpassar sig dessutom sömlöst till allt från små mobilskärmar till stora desktop-skärmar.
 
-### 🚗 Filtrering & Sortering av Bilflottan
+### 🚗 Filtrering, Sortering & Premium-animeringar
 Kunder kan enkelt sortera bilarna på namn eller pris, samt filtrera på biltyp (t.ex. SUV, Sport, Familjebil) direkt i gränssnittet.
+* **Sömlösa layoutövergångar**: Med hjälp av det moderna **View Transitions API** flyttas och glider bilkorten mjukt till sina nya positioner när du sorterar eller filtrerar.
+* **Staggered Fade-in**: Korten tonar upp i en progressiv och harmonisk takt (stegvis tidsfördröjning) vid laddning och sortering, vilket ger en modern och levande känsla.
 
 ### 💳 Detaljerat Återlämnings- & Betalningsflöde
 Detta är ett av systemets mest omfattande flöden och kan startas antingen av kunden (via profilsidan) eller av en administratör (via admin-panelen) när en bil lämnas tillbaka:
@@ -85,6 +87,13 @@ Detta är ett av systemets mest omfattande flöden och kan startas antingen av k
    * **Kort**: En interaktiv laddnings- och blippsimulering visar hur transaktionen godkänns och genererar en unik referenskod.
    * **Faktura**: Skapar en komplett faktura med fakturanummer, kunduppgifter, momsredovisning (25%) och en fullt fungerande utskriftsknapp kopplad till webbläsarens utskriftsfunktion (`window.print()`).
 4. **API-integration**: Vid avslutat köp skickas en `PUT`-förfrågan till backend som stänger bokningen och sätter dess status till inaktiv.
+
+### 📢 Marknadsföring & Reklamkort
+Administratören kan hantera och visa reklamkort (kampanjer/erbjudanden) som blandas in i bilflottan på kundosidan:
+1. **Inblandning i bilflottan**: Aktiva reklamkort visas efter var tredje bil och har en exklusiv mörkgul estetik med en svepande ljuseffekt (shine-effekt) vid hover.
+2. **Administrationsgränssnitt**: Under fliken **Reklam** i kontrollpanelen kan administratörer utföra fullständiga CRUD-operationer (skapa, läsa, uppdatera, radera) samt slå av/på reklamkort.
+3. **Bildförslag**: Vid skapande av ett reklamkort visas klickbara miniatyrbilder av existerande fordon. Administratören kan enkelt klicka på ett förslag för att använda den bilden.
+4. **Datahantering**: Reklamkorten sparas i ett JSON-register i webbläsarens `localStorage` (`wigell_ads`) med inbyggd fallback-testdata för direkt demonstration.
 
 ### 💰 Ekonomi- & Omsättningsrapport (Alternativ C)
 Administratörer har tillgång till en interaktiv **Ekonomi**-flik i kontrollpanelen:
