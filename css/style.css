@@ -126,30 +126,99 @@ body {
 
 /* Hero Section */
 .hero {
-    padding: 7rem 1rem 5rem;
+    position: relative;
+    padding: 5rem 2rem;
     text-align: center;
     background: radial-gradient(circle at center, rgba(212, 175, 55, 0.08) 0%, rgba(10, 10, 10, 0) 70%);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.08);
-    margin-bottom: 2rem;
+    border: 1px solid rgba(212, 175, 55, 0.08);
+    border-radius: 16px;
+    margin-top: 1.5rem;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: var(--transition-standard);
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(10, 10, 11, 0.4) 0%, rgba(10, 10, 11, 0.85) 100%);
+    z-index: 1;
+    display: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    width: 100%;
+}
+
+.hero-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    color: var(--color-brand-primary);
+    background: rgba(212, 175, 55, 0.1);
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    margin-bottom: 1.2rem;
+    text-transform: uppercase;
 }
 
 .hero .h1-premium {
-    font-size: 4.5rem;
+    font-size: 3.5rem;
     font-weight: 800;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     background: linear-gradient(135deg, #ffffff 30%, #d4af37 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -0.02em;
+    line-height: 1.15;
 }
 
 .hero p {
     color: var(--color-text-muted);
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 300;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     max-width: 600px;
     margin: 0.5rem auto 0;
+}
+
+/* Specific Home Hero styling utilizing the background image */
+.hero.hero-home {
+    min-height: 440px;
+    align-items: flex-start;
+    text-align: left;
+    padding: 4rem 4rem;
+    background-image: url('../hero.jpg');
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.hero.hero-home .hero-overlay {
+    display: block;
+    background: linear-gradient(to right, rgba(10, 10, 11, 0.95) 0%, rgba(10, 10, 11, 0.75) 45%, rgba(10, 10, 11, 0.15) 100%);
+}
+
+.hero.hero-home .hero-content {
+    max-width: 550px;
+}
+
+.hero.hero-home p {
+    margin: 0.5rem 0 0;
+    color: #e4e4e7;
 }
 
 /* Typography Classes */

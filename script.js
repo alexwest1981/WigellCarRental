@@ -556,7 +556,7 @@ background-color: var(--color-bg-base);</div>
     // --- CUSTOMER VIEWS ---
 
     async showCustomer() {
-        this.renderLayout("Vår Vagnpark", "Upplev friheten med Wigells Gold Standard.");
+        this.renderLayout("Vår Vagnpark", "Upplev friheten med Wigells Gold Standard.", true);
         const grid = document.getElementById('view-container');
         grid.innerHTML = '<div class="grid grid-3" id="car-grid"><div style="grid-column:1/-1; text-align:center">Laddar vagnparken...</div></div>';
 
@@ -567,7 +567,7 @@ background-color: var(--color-bg-base);</div>
             // Re-render hero to ensure it's visible
             const container = document.getElementById('app-content');
             if (container && !container.querySelector('.hero')) {
-                this.renderLayout("Vår Vagnpark", "Upplev friheten med Wigells Gold Standard.");
+                this.renderLayout("Vår Vagnpark", "Upplev friheten med Wigells Gold Standard.", true);
             }
             
             this.renderCars();
@@ -576,12 +576,17 @@ background-color: var(--color-bg-base);</div>
         }
     },
 
-    renderLayout(title, subtitle) {
+    renderLayout(title, subtitle, isHome = false) {
         const content = document.getElementById('app-content');
+        const heroClass = isHome ? 'hero hero-home view-fade' : 'hero view-fade';
         content.innerHTML = `
-            <div class="hero view-fade">
-                <h1 class="h1-premium">${title}</h1>
-                <p>${subtitle}</p>
+            <div class="${heroClass}">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <div class="hero-badge">Wigells Gold Standard</div>
+                    <h1 class="h1-premium">${title}</h1>
+                    <p>${subtitle}</p>
+                </div>
             </div>
             <div id="view-container"></div>
         `;
