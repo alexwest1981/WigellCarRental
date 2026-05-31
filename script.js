@@ -61,6 +61,13 @@ Sök efter det exakta funktionsnamnet (inklusive parenteser) för att snabbt nav
 - app.handleUserSubmit(e, userId)         - Sparar eller uppdaterar en användare via API:et
 - app.deleteItem(type, id)                - Raderar en bil/bokning/användare via API:et
 
+# MARKNADSFÖRING / REKLAMKORT
+- app.showAdminAds()                      - Visar administrativ tabell för alla reklamkort
+- app.toggleAdActive(adId)                - Växlar status (Aktiv/Inaktiv) på ett reklamkort
+- app.deleteAd(adId)                      - Tar bort ett reklamkort från systemet
+- app.showAdModal(adId)                   - Visar modalen för att skapa/redigera reklamkort
+- app.handleAdSubmit(e, adId)             - Sparar eller uppdaterar reklamkortet i localStorage
+
 # PROFILREDIGERING
 - app.handleProfileSubmit(e)              - Uppdaterar användarens egna profiluppgifter
 
@@ -83,6 +90,26 @@ Sök efter det exakta funktionsnamnet (inklusive parenteser) för att snabbt nav
 
 const app = {
     // Configuration
+    defaultAds: [
+        {
+            id: 1,
+            title: "Guldmedlemskap",
+            description: "Bli guldmedlem idag och få 15% rabatt på alla hyror samt fri avbokning!",
+            imageUrl: "koncernensBackend/images/corvetteZ06.jpg",
+            linkText: "Läs mer & registrera",
+            linkUrl: "#kontakt",
+            active: true
+        },
+        {
+            id: 2,
+            title: "Helgerbjudande",
+            description: "Boka en premium-SUV över helgen för endast 1999 kr per dygn. Fria mil ingår!",
+            imageUrl: "koncernensBackend/images/MercedesBenzMarcoPolo300.jpg",
+            linkText: "Se våra SUV:ar",
+            linkUrl: "#bilar",
+            active: true
+        }
+    ],
     baseUrl: 'http://localhost:8080/api/v1',
     user: null,
     auth: null,
@@ -581,6 +608,36 @@ background-color: var(--color-bg-base);</div>
             return 0;
         });
 
+        // Hämta aktiva reklamkort
+        let activeAds = [];
+        try {
+            const stored = localStorage.getItem('wigell_ads');
+            if (stored) {
+                activeAds = JSON.parse(stored).filter(ad => ad.active);
+            } else {
+                localStorage.setItem('wigell_ads', JSON.stringify(this.defaultAds));
+                activeAds = this.defaultAds.filter(ad => ad.active);
+            }
+        } catch (e) {
+            console.error("Kunde inte ladda reklamkort", e);
+        }
+
+        // Blanda bilar och reklamkort (ett reklamkort var tredje bil)
+        let gridItems = [];
+        let adIndex = 0;
+        filteredCars.forEach((car, index) => {
+            gridItems.push({ type: 'car', data: car });
+            if ((index + 1) % 3 === 0 && adIndex < activeAds.length) {
+                gridItems.push({ type: 'ad', data: activeAds[adIndex] });
+                adIndex++;
+            }
+        });
+        // Om det finns reklamkort kvar, lägg dem i slutet
+        while (adIndex < activeAds.length) {
+            gridItems.push({ type: 'ad', data: activeAds[adIndex] });
+            adIndex++;
+        }
+
         grid.innerHTML = `
             <div class="controls-bar view-fade" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem">
                 <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap">
@@ -603,46 +660,76 @@ background-color: var(--color-bg-base);</div>
                 </div>
             </div>
             <div class="grid grid-3" id="car-grid">
-            ${filteredCars.map(car => `
-                <div class="card view-fade">
-                    <div class="card-img-container">
-                        <img src="${this.getCarImage(car)}" class="car-photo" alt="${car.name}" onerror="this.src='koncernensBackend/images/corvetteZ06.jpg'">
-                    </div>
-                    <div class="card-content">
-                        <div style="display:flex; justify-content:space-between; align-items:start">
-                            <span class="badge">${car.type || 'Premium'}</span>
-                            <span class="text-small">ID: ${car.id}</span>
-                        </div>
-                        <h2 class="h2-premium" style="font-size:1.5rem; margin-top:0.5rem; margin-bottom:0.8rem">${car.name} <span style="font-weight:400; color:var(--color-text-muted)">${car.model}</span></h2>
-                        
-                        <div style="margin-bottom:1.5rem; flex-grow:1">
-                            <ul style="list-style:none; padding:0; display:flex; gap:1rem; flex-wrap:wrap">
-                                ${car.feature1 ? `<li class="text-small"><span style="color:var(--color-brand-primary)">✓</span> ${car.feature1}</li>` : ''}
-                                ${car.feature2 ? `<li class="text-small"><span style="color:var(--color-brand-primary)">✓</span> ${car.feature2}</li>` : ''}
-                            </ul>
-                        </div>
+            ${gridItems.map((item, index) => {
+                if (item.type === 'car') {
+                    const car = item.data;
+                    return `
+                        <div class="card view-fade" style="animation-delay: ${index * 60}ms; view-transition-name: car-card-${car.id};">
+                            <div class="card-img-container">
+                                <img src="${this.getCarImage(car)}" class="car-photo" alt="${car.name}" onerror="this.src='koncernensBackend/images/corvetteZ06.jpg'">
+                            </div>
+                            <div class="card-content">
+                                <div style="display:flex; justify-content:space-between; align-items:start">
+                                    <span class="badge">${car.type || 'Premium'}</span>
+                                    <span class="text-small">ID: ${car.id}</span>
+                                </div>
+                                <h2 class="h2-premium" style="font-size:1.5rem; margin-top:0.5rem; margin-bottom:0.8rem">${car.name} <span style="font-weight:400; color:var(--color-text-muted)">${car.model}</span></h2>
+                                
+                                <div style="margin-bottom:1.5rem; flex-grow:1">
+                                    <ul style="list-style:none; padding:0; display:flex; gap:1rem; flex-wrap:wrap">
+                                        ${car.feature1 ? `<li class="text-small"><span style="color:var(--color-brand-primary)">✓</span> ${car.feature1}</li>` : ''}
+                                        ${car.feature2 ? `<li class="text-small"><span style="color:var(--color-brand-primary)">✓</span> ${car.feature2}</li>` : ''}
+                                    </ul>
+                                </div>
 
-                        <div class="price-box">
-                            <span class="price-value">${car.price} SEK</span>
-                            <span class="price-unit">/ dygn</span>
+                                <div class="price-box">
+                                    <span class="price-value">${car.price} SEK</span>
+                                    <span class="price-unit">/ dygn</span>
+                                </div>
+                                <button class="btn btn-primary" onclick="app.showBookingForm(${car.id})">Boka nu</button>
+                            </div>
                         </div>
-                        <button class="btn btn-primary" onclick="app.showBookingForm(${car.id})">Boka nu</button>
-                    </div>
-                </div>
-            `).join('')}
+                    `;
+                } else {
+                    const ad = item.data;
+                    return `
+                        <div class="card view-fade ad-card-premium" style="background: linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(10,10,11,0.95) 100%); border: 1px solid var(--color-brand-primary); animation-delay: ${index * 60}ms; view-transition-name: ad-card-${ad.id}; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="card-img-container" style="position: relative;">
+                                <img src="${ad.imageUrl || 'koncernensBackend/images/corvetteZ06.jpg'}" class="car-photo" alt="${ad.title}" onerror="this.src='koncernensBackend/images/corvetteZ06.jpg'" style="opacity: 0.55; filter: grayscale(10%);">
+                                <span class="badge" style="position: absolute; top: 1rem; left: 1rem; background: var(--color-brand-primary); color: #000; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; box-shadow: 0 0 10px rgba(212,175,55,0.3)">ERBJUDANDE</span>
+                            </div>
+                            <div class="card-content" style="display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; padding: 1.5rem;">
+                                <div>
+                                    <h2 class="h2-premium" style="font-size: 1.5rem; color: var(--color-brand-primary); margin-top: 0; margin-bottom: 0.5rem; text-shadow: 0 0 10px rgba(212,175,55,0.1)">${ad.title}</h2>
+                                    <p style="color: var(--color-text-main); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem;">${ad.description}</p>
+                                </div>
+                                <a href="${ad.linkUrl}" class="btn btn-outline" style="text-align: center; display: block; width: 100%; border-color: var(--color-brand-primary); color: var(--color-brand-primary); text-decoration: none; padding: 0.6rem 0;" onclick="if('${ad.linkUrl}'.startsWith('#')) { app.navigate('${ad.linkUrl}'); return false; }">${ad.linkText}</a>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('')}
         </div>`;
     },
 
     setCarFilter(val) {
         this.carFilterType = val;
-        this.renderCars();
+        if (document.startViewTransition) {
+            document.startViewTransition(() => this.renderCars());
+        } else {
+            this.renderCars();
+        }
     },
 
     setCarSort(val) {
         const parts = val.split('_');
         this.carSort.field = parts[0];
         this.carSort.asc = parts[1] === 'asc';
-        this.renderCars();
+        if (document.startViewTransition) {
+            document.startViewTransition(() => this.renderCars());
+        } else {
+            this.renderCars();
+        }
     },
 
     getCarImage(car) {
@@ -771,10 +858,11 @@ background-color: var(--color-bg-base);</div>
                     <h1>Admin Kontrollpanel</h1>
                 </div>
                 
-                <div class="admin-menu-buttons" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:1rem; margin-bottom:2rem;">
+                <div class="admin-menu-buttons" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem;">
                     <button class="btn btn-outline" id="admin-btn-cars" onclick="app.loadAdminData('cars')">📦 BILAR</button>
                     <button class="btn btn-outline" id="admin-btn-bookings" onclick="app.loadAdminData('bookings')">📅 BOKNINGAR</button>
                     <button class="btn btn-outline" id="admin-btn-users" onclick="app.loadAdminData('users')">👥 ANVÄNDARE</button>
+                    <button class="btn btn-outline" id="admin-btn-ads" onclick="app.showAdminAds()">📢 REKLAM</button>
                     <button class="btn btn-outline" id="admin-btn-revenue" onclick="app.showAdminRevenue()">💰 EKONOMI</button>
                     <button class="btn btn-outline" style="border-color: #555" onclick="app.showStyleguide()">🎨 STYLEGUIDE</button>
                 </div>
@@ -1801,6 +1889,248 @@ background-color: var(--color-bg-base);</div>
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
+    },
+
+    showAdminAds() {
+        const area = document.getElementById('admin-table-area');
+        area.innerHTML = '<p style="text-align:center" class="text-muted">Hämtar reklamkort...</p>';
+        this.currentAdminType = 'ads';
+        
+        // Highlight active button
+        document.querySelectorAll('.admin-menu-buttons button').forEach(el => el.classList.remove('active'));
+        const adsBtn = document.getElementById('admin-btn-ads');
+        if (adsBtn) adsBtn.classList.add('active');
+
+        let ads = [];
+        try {
+            const storedAds = localStorage.getItem('wigell_ads');
+            if (storedAds) {
+                ads = JSON.parse(storedAds);
+            } else {
+                localStorage.setItem('wigell_ads', JSON.stringify(this.defaultAds));
+                ads = this.defaultAds;
+            }
+        } catch (e) {
+            console.error("Kunde inte ladda reklam", e);
+        }
+
+        let adsHtml = '';
+        if (ads.length === 0) {
+            adsHtml = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:2rem; color:var(--color-text-muted);">
+                        Inga reklamkort inlagda. Klicka på "Skapa reklamkort" för att lägga till ett.
+                    </td>
+                </tr>
+            `;
+        } else {
+            ads.forEach(ad => {
+                adsHtml += `
+                    <tr class="table-row-premium">
+                        <td>#${ad.id}</td>
+                        <td>
+                            <img src="${ad.imageUrl || 'koncernensBackend/images/corvetteZ06.jpg'}" style="height:40px; border-radius:6px; object-fit:cover; width:60px;" onerror="this.src='koncernensBackend/images/corvetteZ06.jpg'">
+                        </td>
+                        <td style="font-weight:bold; color:var(--color-brand-primary);">${ad.title}</td>
+                        <td><span style="font-size:0.85rem; max-width:250px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ad.description}</span></td>
+                        <td><span class="badge" style="background:rgba(255,255,255,0.05); color:var(--color-text-main); font-weight:normal; border:1px solid rgba(255,255,255,0.1); padding:2px 8px;">${ad.linkText} ➔ ${ad.linkUrl}</span></td>
+                        <td>
+                            <span class="badge" style="cursor:pointer; background:${ad.active ? 'rgba(46,204,113,0.15)' : 'rgba(231,76,60,0.15)'}; color:${ad.active ? '#2ecc71' : '#e74c3c'}; border:1px solid ${ad.active ? '#2ecc71' : '#e74c3c'}; padding:4px 10px; border-radius:4px; font-weight:bold;" onclick="app.toggleAdActive(${ad.id})">
+                                ${ad.active ? 'AKTIV' : 'INAKTIV'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-outline" style="padding:0.2rem 0.6rem; font-size:0.75rem; width:auto; margin-right:0.5rem; border-color:var(--color-brand-primary); color:var(--color-brand-primary);" onclick="app.showAdModal(${ad.id})">Redigera</button>
+                            <button class="btn btn-danger" style="padding:0.2rem 0.6rem; font-size:0.75rem; width:auto;" onclick="app.deleteAd(${ad.id})">Radera</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        area.innerHTML = `
+            <div class="view-fade">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h2 class="h2-premium" style="margin:0;">Marknadsföring & Reklamkort</h2>
+                    <button class="btn btn-primary" style="width:auto; padding:0.5rem 1.2rem; font-size:0.85rem;" onclick="app.showAdModal()">＋ Skapa Reklamkort</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="table-premium" style="width:100%;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Bild</th>
+                                <th>Rubrik</th>
+                                <th>Beskrivning</th>
+                                <th>Knapp & Länk</th>
+                                <th>Status</th>
+                                <th>Åtgärder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    },
+
+    toggleAdActive(adId) {
+        try {
+            const stored = localStorage.getItem('wigell_ads');
+            if (stored) {
+                const ads = JSON.parse(stored);
+                const ad = ads.find(a => a.id == adId);
+                if (ad) {
+                    ad.active = !ad.active;
+                    localStorage.setItem('wigell_ads', JSON.stringify(ads));
+                    this.showAdminAds();
+                }
+            }
+        } catch (e) {
+            console.error("Kunde inte ändra status", e);
+        }
+    },
+
+    deleteAd(adId) {
+        if (!confirm("Är du säker på att du vill ta bort detta reklamkort?")) return;
+        try {
+            const stored = localStorage.getItem('wigell_ads');
+            if (stored) {
+                const ads = JSON.parse(stored);
+                const filtered = ads.filter(a => a.id != adId);
+                localStorage.setItem('wigell_ads', JSON.stringify(filtered));
+                this.showAdminAds();
+            }
+        } catch (e) {
+            console.error("Kunde inte radera reklamkort", e);
+        }
+    },
+
+    showAdModal(adId = null) {
+        let ad = {
+            title: '',
+            description: '',
+            imageUrl: 'koncernensBackend/images/corvetteZ06.jpg',
+            linkText: 'Boka nu',
+            linkUrl: '#bilar',
+            active: true
+        };
+
+        if (adId) {
+            try {
+                const stored = localStorage.getItem('wigell_ads');
+                if (stored) {
+                    const ads = JSON.parse(stored);
+                    const found = ads.find(a => a.id == adId);
+                    if (found) ad = found;
+                }
+            } catch (e) {
+                console.error("Kunde inte läsa reklamkort för redigering", e);
+            }
+        }
+
+        const backdrop = document.getElementById('modal-backdrop');
+        const container = document.getElementById('modal-container');
+        container.style.maxWidth = '550px';
+
+        const suggestions = [
+            'koncernensBackend/images/corvetteZ06.jpg',
+            'koncernensBackend/images/BMWM440I.jpg',
+            'koncernensBackend/images/MercedesBenzMarcoPolo300.jpg',
+            'koncernensBackend/images/NissanJuke.jpg',
+            'koncernensBackend/images/peugeotTraveller.jpg',
+            'koncernensBackend/images/skodaEnyaq.jpg',
+            'koncernensBackend/images/skodaSuperb.jpg',
+            'koncernensBackend/images/volkswagenBuzz.jpg'
+        ];
+
+        container.innerHTML = `
+            <button class="modal-close" onclick="app.closeModal()" aria-label="Stäng formulär">&times;</button>
+            <h2 class="h2-premium" style="margin-bottom:1.5rem">${adId ? 'Redigera Reklamkort' : 'Skapa Reklamkort'}</h2>
+            
+            <form onsubmit="app.handleAdSubmit(event, ${adId || 'null'})" style="text-align:left;">
+                <div class="form-group">
+                    <label class="form-label" for="ad-title">RUBRIK</label>
+                    <input type="text" id="ad-title" class="form-input" required placeholder="T.ex. Sommarkampanj!" value="${ad.title}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ad-description">BESKRIVNING</label>
+                    <textarea id="ad-description" class="form-input" required rows="3" placeholder="Beskriv erbjudandet för kunden..." style="resize:vertical; font-family:inherit;">${ad.description}</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ad-image-url">BILD-URL</label>
+                    <input type="text" id="ad-image-url" class="form-input" required placeholder="T.ex. sökväg till bild" value="${ad.imageUrl}">
+                    
+                    <p style="font-size:0.75rem; color:var(--color-text-muted); margin-top:0.5rem; margin-bottom:0.3rem;">Klicka på ett bildförslag nedan för att välja den:</p>
+                    <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.5rem;">
+                        ${suggestions.map(s => `
+                            <img src="${s}" style="height:35px; border-radius:4px; cursor:pointer; border:1px solid ${ad.imageUrl === s ? 'var(--color-brand-primary)' : 'transparent'}" onclick="document.getElementById('ad-image-url').value='${s}'; document.querySelectorAll('.ad-img-sugg').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--color-brand-primary)'" class="ad-img-sugg" title="${s.split('/').pop()}">
+                        `).join('')}
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="ad-link-text">KNAPPTEXT</label>
+                        <input type="text" id="ad-link-text" class="form-input" required placeholder="T.ex. Boka nu" value="${ad.linkText}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="ad-link-url">LÄNKADRESS</label>
+                        <input type="text" id="ad-link-url" class="form-input" required placeholder="T.ex. #kontakt" value="${ad.linkUrl}">
+                    </div>
+                </div>
+                <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top:1.5rem; margin-bottom:2rem;">
+                    <input type="checkbox" id="ad-active" ${ad.active ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;">
+                    <label for="ad-active" style="cursor:pointer; color:var(--color-text-main); font-weight:600; font-size:0.9rem;">Visa direkt på sidan (Aktiv)</label>
+                </div>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <button type="button" class="btn btn-outline" onclick="app.closeModal()">Avbryt</button>
+                    <button type="submit" class="btn btn-primary">${adId ? 'Spara ändringar' : 'Skapa reklamkort'}</button>
+                </div>
+            </form>
+        `;
+
+        backdrop.style.display = 'flex';
+        void backdrop.offsetWidth;
+        backdrop.classList.add('active');
+    },
+
+    handleAdSubmit(e, adId = null) {
+        e.preventDefault();
+        const title = document.getElementById('ad-title').value;
+        const description = document.getElementById('ad-description').value;
+        const imageUrl = document.getElementById('ad-image-url').value;
+        const linkText = document.getElementById('ad-link-text').value;
+        const linkUrl = document.getElementById('ad-link-url').value;
+        const active = document.getElementById('ad-active').checked;
+
+        try {
+            const stored = localStorage.getItem('wigell_ads');
+            let ads = stored ? JSON.parse(stored) : [];
+
+            if (adId) {
+                // Redigera existerande
+                ads = ads.map(a => {
+                    if (a.id == adId) {
+                        return { id: adId, title, description, imageUrl, linkText, linkUrl, active };
+                    }
+                    return a;
+                });
+            } else {
+                // Hitta nästa lediga ID
+                const nextId = ads.length ? Math.max(...ads.map(a => a.id)) + 1 : 1;
+                ads.push({ id: nextId, title, description, imageUrl, linkText, linkUrl, active });
+            }
+
+            localStorage.setItem('wigell_ads', JSON.stringify(ads));
+            this.closeModal();
+            this.showAdminAds();
+        } catch (err) {
+            alert("Kunde inte spara reklamkort: " + err.message);
+        }
     }
 };
 

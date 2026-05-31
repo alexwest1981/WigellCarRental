@@ -426,7 +426,7 @@ select.form-input option {
 
 /* Animations */
 .view-fade {
-    animation: fadeIn 0.6s ease forwards;
+    animation: fadeIn 0.6s ease both;
 }
 
 @keyframes fadeIn {
@@ -678,5 +678,41 @@ select.form-input option {
         background: #ffffff !important;
         color: #000000 !important;
         width: 100% !important;
+    }
+}
+
+/* Premium Ad Card Styling */
+.ad-card-premium {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.ad-card-premium:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.25);
+    border-color: var(--color-brand-primary) !important;
+}
+
+.ad-card-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -75%;
+    z-index: 2;
+    display: block;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%);
+    transform: skewX(-25deg);
+}
+
+.ad-card-premium:hover::before {
+    animation: shine 0.75s;
+}
+
+@keyframes shine {
+    100% {
+        left: 125%;
     }
 }
